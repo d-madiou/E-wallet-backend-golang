@@ -59,9 +59,6 @@ type LedgerEntry struct {
 	BalanceAfter  Money
 }
 
-// 2. Domain logic where methods are attached to the entities
-
-// domain logic validation
 func (t *Transaction) Validate() error {
 	if t.Amount <= 0 {
 		return errors.New("amount must be greater than zero")

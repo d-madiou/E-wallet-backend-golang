@@ -4,7 +4,6 @@ import (
 	"context"
 )
 
-// Repository defines the "Contract" for storage.
 type Repository interface {
 	CreateTransaction(ctx context.Context, tx *Transaction) error
 	GetWallet(ctx context.Context, id WalletID) (*Wallet, error)
