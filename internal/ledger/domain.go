@@ -5,12 +5,8 @@ import (
 	"time"
 )
 
-// 1. Value Objects this is the building block
-
-// note: we never use float64 for money, we use int64 to represent cents
 type Money int64
 
-// currency represents the currency code (e.g., USD, EUR)
 type Currency string
 
 const (
