@@ -18,21 +18,18 @@ const (
 	EUR Currency = "EUR"
 )
 
-// strong types for IDs to prevent mix-ups
 type WalletID string
 type TransactionID string
 
-// Let's define the struct for wallet considered as snapshot of the wallet at a point in time
 type Wallet struct {
 	ID        WalletID
-	OwnerID   string   // could be user ID or business ID
-	Currency  Currency // currency of the wallet
-	Balance   Money    // balance in cents to avoid floating point issues
+	OwnerID   string
+	Currency  Currency
+	Balance   Money
 	UpdatedAt time.Time
-	Version   int // for optimistic locking
+	Version   int
 }
 
-// Transaction represents a transfer of money between wallets
 type Transaction struct {
 	ID           TransactionID
 	FromWalletID WalletID
