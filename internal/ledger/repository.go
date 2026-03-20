@@ -9,6 +9,7 @@ type Repository interface {
 	GetWallet(ctx context.Context, id WalletID) (*Wallet, error)
 	SaveLedgerEntry(ctx context.Context, entry *LedgerEntry) error
 	UpdateBalance(ctx context.Context, id WalletID, newBalance Money, expectedVersion int) error
+	GetLedgerEntries(ctx context.Context, walletID WalletID, limit int) ([]LedgerEntry, error)
 }
 
 type Atomic interface {

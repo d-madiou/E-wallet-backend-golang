@@ -82,3 +82,22 @@ func (s *Service) TransferMoney(ctx context.Context, req TransferRequest) error 
 		return nil
 	})
 }
+
+func (s *Service) GetWalletStatement(ctx context.Context, id WalletID) (*Wallet, []LedgerEntry, error) {
+	var wallet *Wallet
+	var entries []LedgerEntry
+
+	err := s.atomic.Run(ctx, func(repo Repository) error {
+		var err error
+
+		wallet, err = repo.GetWallet(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		entries, err = repo.GetLedgerEntries(ctx, id, 10)
+		return err
+	})
+
+	return wallet, entries, err
+}
