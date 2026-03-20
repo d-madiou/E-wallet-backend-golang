@@ -33,13 +33,11 @@ func (s *PostgresStorage) Run(ctx context.Context, fn func(repo ledger.Repositor
 
 	repo := &postgresRepository{tx: tx}
 
-	// 4. Run the function with the repository
 	if err := fn(repo); err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	// 5. Success, commit the transaction
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 
@@ -48,13 +46,11 @@ func (s *PostgresStorage) Run(ctx context.Context, fn func(repo ledger.Repositor
 
 }
 
-// Here we need to define the transition bound repository
 type postgresRepository struct {
 	tx *sql.Tx
 }
 
 func (r *postgresRepository) CreateTransaction(ctx context.Context, tx *ledger.Transaction) error {
-	// Let's write the SQL query to create a transaction
 	query := `
 		INSERT INTO transactions (id, from_wallet_id, to_wallet_id, amount, state, created_at)
 		VALUES ($1, $2, $3, $4, $5, NOW())
@@ -126,7 +122,6 @@ func (r *postgresRepository) SaveLedgerEntry(ctx context.Context, entry *ledger.
        VALUES ($1, $2, $3, $4, $5)
     `
 
-	// THE FIX: Unpack the struct manually into the 5 placeholders
 	created, err := r.tx.ExecContext(ctx, query,
 		entry.ID,
 		entry.WalletID,
@@ -147,4 +142,30 @@ func (r *postgresRepository) SaveLedgerEntry(ctx context.Context, entry *ledger.
 		return fmt.Errorf("failed to save ledger entry, no rows affected: %s", entry.ID)
 	}
 	return nil
+}
+
+// GetLedgerEntries retrieves ledger entries for a given wallet with a limit
+func (r *postgresRepository) GetLedgerEntries(ctx context.Context, walletID ledger.WalletID, limit int) ([]ledger.LedgerEntry, error) {
+	query := `
+		SELECT id, wallet_id, transaction_id, amount, balance_after 
+		FROM ledger_entries 
+		WHERE wallet_id = $1 
+		ORDER BY created_at DESC 
+		LIMIT $2
+	`
+	rows, err := r.tx.QueryContext(ctx, query, walletID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var entries []ledger.LedgerEntry
+	for rows.Next() {
+		var e ledger.LedgerEntry
+		if err := rows.Scan(&e.ID, &e.WalletID, &e.TransactionID, &e.Amount, &e.BalanceAfter); err != nil {
+			return nil, err
+		}
+		entries = append(entries, e)
+	}
+	return entries, nil
 }

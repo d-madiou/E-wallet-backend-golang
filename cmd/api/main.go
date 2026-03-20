@@ -36,6 +36,7 @@ func main() {
 	server := api.NewServer(svc)
 
 	http.HandleFunc("/transfer", server.HandleTransfer)
+	http.HandleFunc("/wallet", server.HandleGetWallet)
 
 	port := ":8080"
 	fmt.Printf("🌍 Server listening on port %s\n", port)
