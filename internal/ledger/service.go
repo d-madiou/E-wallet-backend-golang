@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type Service struct {
@@ -23,7 +24,7 @@ func NewService(atomic Atomic) *Service {
 	}
 }
 
-func (s *Service) TransferMoney(ctx context.Context, req TransferRequest) error {
+func (s *Service) TransferMoney(ctx context.Context, idempotencyKey string, req TransferRequest) error {
 	if req.Amount <= 0 {
 		return errors.New("amount must be positive")
 	}
@@ -50,7 +51,7 @@ func (s *Service) TransferMoney(ctx context.Context, req TransferRequest) error 
 		txID := TransactionID(fmt.Sprintf("txn-%d", req.Amount))
 
 		debitEntry := &LedgerEntry{
-			ID:            "entry-" + string(txID) + "-dr",
+			ID:            fmt.Sprintf("txn-dr-%d", time.Now().UnixNano()),
 			WalletID:      sender.ID,
 			TransactionID: txID,
 			Amount:        -req.Amount,
@@ -61,7 +62,7 @@ func (s *Service) TransferMoney(ctx context.Context, req TransferRequest) error 
 		}
 
 		creditEntry := &LedgerEntry{
-			ID:            "entry-" + string(txID) + "-cr",
+			ID:            fmt.Sprintf("txn-cr-%d", time.Now().UnixNano()),
 			WalletID:      receiver.ID,
 			TransactionID: txID,
 			Amount:        req.Amount,
