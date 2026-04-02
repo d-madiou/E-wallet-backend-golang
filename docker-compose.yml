@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: fintech
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fintech"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - APP_PORT=8080
+      - DATABASE_URL=postgres://postgres:password@db:5432/fintech?sslmode=disable
+
+volumes:
+  pgdata:

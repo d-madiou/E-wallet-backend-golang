@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/d-madiou/fintech-ledger/internal/ledger"
@@ -26,8 +27,14 @@ type TransferRequestDTO struct {
 	Amount     int64  `json:"amount"`
 }
 
-// TransferHandler is the HTTP handler for processing transfer requests for the API POST /transfer
 func (s *Server) HandleTransfer(w http.ResponseWriter, r *http.Request) {
+	// 6. Let's read the key for every transaction (idempotency)
+	requestID := r.Header.Get("X-Request-ID")
+	if requestID == "" {
+		http.Error(w, "Missing X-Request-ID header", http.StatusBadRequest)
+		return
+	}
+	fmt.Println("Request ID received:", requestID)
 	// 1. lET'S ensure it's a POST request for security and correctness
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -37,7 +44,7 @@ func (s *Server) HandleTransfer(w http.ResponseWriter, r *http.Request) {
 	// 2. Parse the JSON body into our DTO
 	var reqDTO TransferRequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&reqDTO); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest) //400
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
@@ -50,7 +57,7 @@ func (s *Server) HandleTransfer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 4. Let's call the engine
-	err := s.LedgerService.TransferMoney(r.Context(), domainReq)
+	err := s.LedgerService.TransferMoney(r.Context(), requestID, domainReq)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -71,7 +78,7 @@ func (s *Server) HandleGetWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Extract wallet ID from query parameters (Your excellent idea!)
+	// 2. Extract wallet ID from query parameters
 	walletID := r.URL.Query().Get("id")
 	if walletID == "" {
 		http.Error(w, "Missing wallet ID", http.StatusBadRequest)
